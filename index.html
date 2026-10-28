@@ -295,11 +295,22 @@ async function startCamera() {
     }
 
     stream = await navigator.mediaDevices.getUserMedia({
-      audio: false,
-      video: {
-        facingMode: { ideal: "environment" },
-        width: { ideal: 640 },
-        height: { ideal: 480 }
+  audio: false,
+  video: true
+});
+
+video.srcObject = stream;
+video.muted = true;
+video.playsInline = true;
+
+await video.play();
+
+const track = stream.getVideoTracks()[0];
+
+$("message").textContent =
+  "Kamera terhubung: " + track.label +
+  " | Ukuran gambar: " +
+  video.videoWidth + " x " + video.videoHeight;
       }
     });
 
