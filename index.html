@@ -304,7 +304,30 @@ async function startCamera() {
     });
 
     video.srcObject = stream;
-    await video.play();
+video.muted = true;
+video.playsInline = true;
+video.autoplay = true;
+
+await video.play();
+
+await new Promise((resolve) => {
+  if (video.videoWidth > 0) {
+    resolve();
+  } else {
+    video.addEventListener("loadeddata", resolve, { once: true });
+  }
+});
+
+if (video.videoWidth === 0) {
+  throw new Error("Kamera aktif tetapi gambar belum diterima.");
+}
+
+console.log(
+  "Kamera berhasil:",
+  video.videoWidth,
+  "x",
+  video.videoHeight
+);
 
     $("message").textContent =
       "Kamera aktif. Sedang memuat model AI...";
