@@ -281,10 +281,18 @@ async function loadModel() {
   });
 }
 
+
 async function startCamera() {
   try {
     $("start").disabled = true;
-    await loadModel();
+    setStatus("MEMBUKA KAMERA");
+
+    // 1. Nyalakan kamera terlebih dahulu
+    if (!navigator.mediaDevices?.getUserMedia) {
+      throw new Error(
+        "Kamera tidak tersedia. Buka website melalui HTTPS di Chrome."
+      );
+    }
 
     stream = await navigator.mediaDevices.getUserMedia({
       audio: false,
@@ -298,24 +306,42 @@ async function startCamera() {
     video.srcObject = stream;
     await video.play();
 
+    $("message").textContent =
+      "Kamera aktif. Sedang memuat model AI...";
+
+    // 2. Baru muat model AI
+    await loadModel();
+
+    // 3. Jalankan deteksi setelah model siap
     running = true;
     previousTime = 0;
-    setStatus("KAMERA AKTIF");
-    $("message").textContent =
-      "AI aktif. Arahkan kamera ke benda di sekitar.";
+    setStatus("KAMERA DAN AI AKTIF");
 
     requestAnimationFrame(loop);
+
   } catch (error) {
-    console.error(error);
+    console.error("IRIS ERROR:", error);
+
+    // Matikan kamera jika proses gagal
+    running = false;
+
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      stream = null;
+    }
+
+    video.srcObject = null;
     setStatus("GAGAL");
+
     $("message").textContent =
-      "Gagal memulai: " + error.message +
-      ". Pastikan memakai HTTPS, internet aktif saat memuat model, " +
-      "dan izin kamera diberikan.";
+      "Kesalahan: " + error.message +
+      ". Periksa izin kamera dan koneksi internet.";
+
   } finally {
     $("start").disabled = false;
   }
 }
+
 
 function stopCamera() {
   running = false;
